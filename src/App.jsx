@@ -1,26 +1,33 @@
 import { useRef, useState, useEffect } from "react";
 
+const TEMPLATES = [
+  { id: 1, name: "模板 A", src: "/templates/frame-1.png" },
+  { id: 2, name: "模板 B", src: "/templates/frame-2.png" },
+  { id: 3, name: "模板 C", src: "/templates/frame-3.png" },
+];
+
 export default function App() {
   const canvasRef = useRef(null);
 
   const [photo, setPhoto] = useState(null);
   const [img, setImg] = useState(null);
+
+  const [currentTemplate, setCurrentTemplate] = useState(TEMPLATES[0]);
   const [frame, setFrame] = useState(null);
 
-  // 圖片位置與縮放
+  // 拖曳與縮放
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 600, y: 600 });
 
-  // 拖曳狀態
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
 
-  // 載入模板
+  // 載入模板（切換時會重新載入）
   useEffect(() => {
     const f = new Image();
-    f.src = "/templates/frame.png";
+    f.src = currentTemplate.src;
     f.onload = () => setFrame(f);
-  }, []);
+  }, [currentTemplate]);
 
   // 載入使用者圖片
   useEffect(() => {
@@ -30,7 +37,7 @@ export default function App() {
     i.onload = () => setImg(i);
   }, [photo]);
 
-  // 畫布合成（frame 永遠顯示）
+  // 合成畫面
   useEffect(() => {
     if (!frame) return;
 
@@ -49,7 +56,7 @@ export default function App() {
       ctx.drawImage(img, pos.x - w / 2, pos.y - h / 2, w, h);
     }
 
-    // 模板永遠在上層
+    // 模板永遠在最上層
     ctx.drawImage(frame, 0, 0, canvas.width, canvas.height);
   }, [img, frame, scale, pos]);
 
@@ -71,7 +78,7 @@ export default function App() {
     dragging.current = false;
   };
 
-  // 下載圖片
+  // 下載
   const downloadImage = () => {
     const link = document.createElement("a");
     link.href = canvasRef.current.toDataURL("image/png");
@@ -83,6 +90,7 @@ export default function App() {
     <div style={{ padding: 20, fontFamily: "system-ui" }}>
       <h2>圖片合成工具</h2>
 
+      {/* 上傳圖片 */}
       <input
         type="file"
         accept="image/*"
@@ -91,6 +99,32 @@ export default function App() {
 
       <br /><br />
 
+      {/* 模板選擇 */}
+      <div style={{ marginBottom: 10 }}>
+        <strong>選擇模板：</strong>
+        <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+          {TEMPLATES.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setCurrentTemplate(t)}
+              style={{
+                padding: "6px 10px",
+                border:
+                  currentTemplate.id === t.id
+                    ? "2px solid #000"
+                    : "1px solid #ccc",
+                background:
+                  currentTemplate.id === t.id ? "#eee" : "#fff",
+                cursor: "pointer",
+              }}
+            >
+              {t.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 縮放 */}
       <label>
         縮放：
         <input
@@ -105,6 +139,7 @@ export default function App() {
 
       <br /><br />
 
+      {/* 畫布 */}
       <canvas
         ref={canvasRef}
         width={300}
@@ -126,8 +161,8 @@ export default function App() {
 
       <button onClick={downloadImage}>下載圖片</button>
 
-      <p style={{ color: "#666", fontSize: 12 }}>
-        👉 拖曳圖片位置，拉滑桿縮放大小。模板一開始就會顯示。
+      <p style={{ fontSize: 12, color: "#666" }}>
+        👉 可切換模板、拖曳圖片位置、調整縮放後下載
       </p>
     </div>
   );
